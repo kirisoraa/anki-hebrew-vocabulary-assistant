@@ -168,7 +168,7 @@ async def add_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if add_word(hebrew_word, translation):
         await update.message.reply_text(f"Added: {hebrew_word} - {translation}")
     else:
-        await update.message.reply_text("Error adding word.")
+        await update.message.reply_text(f"Word '{hebrew_word}' already exists in the database.")
 
 async def remove_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
@@ -240,7 +240,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if add_word(text, translation):
         await update.message.reply_text(f"Added: {text} - {translation}")
     else:
-        await update.message.reply_text("Error adding word.")
+        await update.message.reply_text(f"Word '{text}' already exists in the database.")
 
 def main():
     # Test database connection
