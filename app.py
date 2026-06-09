@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import logging
 import time
 import genanki
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -231,7 +232,7 @@ async def generate_anki_deck(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    # Assume any text input is a Hebrew word to add
+    # Assume any text input is a Hebrew phrase to add
     translation = get_translation(text)
     
     if add_word(text, translation):
