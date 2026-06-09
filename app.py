@@ -87,13 +87,27 @@ def get_translation(hebrew_word):
     }
     
     try:
-        response = requests.get(url, params=params)
+        # Make sure we're sending the correct encoding
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Try to decode with different encodings
+        try:
+            soup = BeautifulSoup(response.content, 'html.parser')
+        except:
+            # If that fails, try with encoding detection
+            soup = BeautifulSoup(response.content, 'html.parser', from_encoding='utf-8')
+            
         translation_div = soup.find('div', {'id': 'ctl00_ctl00_ContentPlaceHolder1_ContentMiddle_TranslationPanel1_div_right'})
         if translation_div:
-            return translation_div.get_text(strip=True)
+            # Clean up the text
+            text = translation_div.get_text(strip=True)
+            # Remove extra whitespace
+            return ' '.join(text.split())
         return "Translation not found"
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Network error fetching translation: {e}")
+        return "Network error fetching translation"
     except Exception as e:
         logger.error(f"Error fetching translation: {e}")
         return "Error fetching translation"
@@ -162,13 +176,20 @@ async def generate_anki_deck(update: Update, context: ContextTypes.DEFAULT_TYPE)
         # Add translation -> word card
         deck_content += f"{translation}\t{word}\n"
     
+    # Ensure proper encoding and format
+    deck_content = deck_content.encode('utf-8', errors='ignore').decode('utf-8')
+    
     # Save to file
     with open("anki_deck.txt", "w", encoding="utf-8") as f:
         f.write(deck_content)
     
     # Send file to user
-    with open("anki_deck.txt", "rb") as f:
-        await update.message.reply_document(document=f, filename="anki_deck.txt")
+    try:
+        with open("anki_deck.txt", "rb") as f:
+            await update.message.reply_document(document=f, filename="anki_deck.txt")
+    except Exception as e:
+        logger.error(f"Error sending file: {e}")
+        await update.message.reply_text("Error generating or sending deck file.")
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
@@ -181,8 +202,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Error adding word.")
 
 def main():
-    # Initialize database
-    init_db()
+    # Test database connection
+    try:
+        init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        return
     
     # Create application
     application = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
@@ -197,6 +223,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     
     # Run the bot
+    logger.info("Starting bot...")
     application.run_polling()
 
 if __name__ == "__main__":
