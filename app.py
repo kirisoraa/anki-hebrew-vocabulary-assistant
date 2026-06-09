@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 import logging
 import time
+import genanki
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -182,25 +183,48 @@ async def generate_anki_deck(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("No words to generate deck.")
         return
     
-    # Create Anki deck content
-    deck_content = ""
+    # Create Anki deck using genanki
+    deck_id = uuid.uuid4().int & (1<<31)-1  # Generate a unique deck ID
+    deck = genanki.Deck(deck_id, 'Hebrew Vocabulary')
+    
+    # Define the model for the cards
+    model = genanki.Model(
+        1607392319,
+        'Hebrew Vocabulary Model',
+        fields=[
+            {'name': 'Hebrew'},
+            {'name': 'Translation'},
+        ],
+        templates=[
+            {
+                'name': 'Card 1',
+                'qfmt': '{{Hebrew}}',
+                'afmt': '{{FrontSide}}<hr id="answer">{{Translation}}',
+            },
+            {
+                'name': 'Card 2',
+                'qfmt': '{{Translation}}',
+                'afmt': '{{FrontSide}}<hr id="answer">{{Hebrew}}',
+            },
+        ]
+    )
+    
+    # Add cards to the deck
     for word, translation in words:
-        # Add word -> translation card
-        deck_content += f"{word}\t{translation}\n"
-        # Add translation -> word card
-        deck_content += f"{translation}\t{word}\n"
+        note = genanki.Note(
+            model=model,
+            fields=[word, translation]
+        )
+        deck.add_note(note)
     
-    # Ensure proper encoding and format
-    deck_content = deck_content.encode('utf-8', errors='ignore').decode('utf-8')
-    
-    # Save to file
-    with open("anki_deck.txt", "w", encoding="utf-8") as f:
-        f.write(deck_content)
+    # Generate the .apkg file
+    filename = "hebrew_vocabulary.apkg"
+    genanki.Package(deck).write_to_file(filename)
     
     # Send file to user
     try:
-        with open("anki_deck.txt", "rb") as f:
-            await update.message.reply_document(document=f, filename="anki_deck.txt")
+        with open(filename, "rb") as f:
+            await update.message.reply_document(document=f, filename=filename)
     except Exception as e:
         logger.error(f"Error sending file: {e}")
         await update.message.reply_text("Error generating or sending deck file.")
