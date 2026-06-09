@@ -9,6 +9,10 @@ A Telegram bot that helps with Hebrew vocabulary practice by saving words and ge
 - Generate Anki decks with reverse flashcards
 - Telegram commands: /list, /add, /remove, /deck, /help
 
+## Disclaimer
+
+This project was shamelessly vibecoded. 🫶
+
 ## Architecture
 
 - Telegram bot in Python using python-telegram-bot
