@@ -13,6 +13,7 @@ services:
       DB_NAME: vocabulary_db
       DB_USER: vocabulary_user
       DB_PASSWORD: vocabulary_password
+      PYTHONUNBUFFERED: 1
 
   postgres:
     image: postgres:13

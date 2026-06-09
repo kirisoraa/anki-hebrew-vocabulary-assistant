@@ -161,7 +161,8 @@ async def add_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please provide a Hebrew word to add.")
         return
     
-    hebrew_word = context.args[0]
+    # Join all arguments to handle multi-word Hebrew phrases
+    hebrew_word = ' '.join(context.args)
     translation = get_translation(hebrew_word)
     
     if add_word(hebrew_word, translation):
@@ -174,7 +175,8 @@ async def remove_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("Please provide a Hebrew word to remove.")
         return
     
-    hebrew_word = context.args[0]
+    # Join all arguments to handle multi-word Hebrew phrases
+    hebrew_word = ' '.join(context.args)
     remove_word(hebrew_word)
     await update.message.reply_text(f"Removed: {hebrew_word}")
 
