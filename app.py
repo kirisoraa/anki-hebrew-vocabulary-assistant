@@ -61,7 +61,8 @@ def add_word(word, translation):
     try:
         cursor.execute("INSERT INTO vocabulary (word, translation) VALUES (%s, %s) ON CONFLICT (word) DO NOTHING", (word, translation))
         conn.commit()
-        return True
+        # Check if any rows were actually inserted
+        return cursor.rowcount > 0
     except psycopg2.Error as e:
         logger.error(f"Error adding word: {e}")
         return False
