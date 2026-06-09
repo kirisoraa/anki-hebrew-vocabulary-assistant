@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # Manual build and push script for Anki Hebrew Vocabulary Assistant
+# Using the correct GitHub Container Registry format
 
 echo "=== Building and Pushing to GitHub Container Registry ==="
 
-# Build the Docker image
+# Make sure we're in the right directory
+cd /home/kirisora/Projects/Personal/anki-hebrew-vocabulary-assistant
+
+# Build the Docker image with correct tag format
 echo "Building Docker image..."
 docker build -t ghcr.io/kirisoraa/anki-hebrew-vocabulary-assistant:latest .
 

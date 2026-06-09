@@ -26,3 +26,6 @@ jobs:
         context: .
         push: true
         tags: ghcr.io/kirisoraa/anki-hebrew-vocabulary-assistant:latest
+      permissions:
+        contents: read
+        packages: write
