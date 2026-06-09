@@ -5,6 +5,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import requests
 from bs4 import BeautifulSoup
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,22 +18,35 @@ DB_USER = os.getenv("DB_USER", "vocabulary_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "vocabulary_password")
 
 def init_db():
-    conn = psycopg2.connect(
-        host=DB_HOST,
-        database=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD
-    )
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS vocabulary (
-            id SERIAL PRIMARY KEY,
-            word TEXT UNIQUE NOT NULL,
-            translation TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    max_retries = 5
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            conn = psycopg2.connect(
+                host=DB_HOST,
+                database=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD
+            )
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS vocabulary (
+                    id SERIAL PRIMARY KEY,
+                    word TEXT UNIQUE NOT NULL,
+                    translation TEXT NOT NULL
+                )
+            ''')
+            conn.commit()
+            conn.close()
+            logger.info("Database initialized successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to initialize database (attempt {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                raise
 
 def add_word(word, translation):
     conn = psycopg2.connect(

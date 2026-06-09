@@ -6,7 +6,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
       DB_NAME: vocabulary_db
@@ -20,7 +21,12 @@ services:
       POSTGRES_USER: vocabulary_user
       POSTGRES_PASSWORD: vocabulary_password
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - words_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vocabulary_user -d vocabulary_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_data:
+  words_postgres_data:
