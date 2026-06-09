@@ -7,6 +7,11 @@ services:
       - .env
     depends_on:
       - postgres
+    environment:
+      DB_HOST: postgres
+      DB_NAME: vocabulary_db
+      DB_USER: vocabulary_user
+      DB_PASSWORD: vocabulary_password
 
   postgres:
     image: postgres:13

@@ -1,5 +1,5 @@
 import os
-import sqlite3
+import psycopg2
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import requests
@@ -11,14 +11,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Database setup
-DB_PATH = "vocabulary.db"
+DB_HOST = os.getenv("DB_HOST", "postgres")
+DB_NAME = os.getenv("DB_NAME", "vocabulary_db")
+DB_USER = os.getenv("DB_USER", "vocabulary_user")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "vocabulary_password")
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS vocabulary (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             word TEXT UNIQUE NOT NULL,
             translation TEXT NOT NULL
         )
@@ -27,20 +35,30 @@ def init_db():
     conn.close()
 
 def add_word(word, translation):
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT OR IGNORE INTO vocabulary (word, translation) VALUES (?, ?)", (word, translation))
+        cursor.execute("INSERT INTO vocabulary (word, translation) VALUES (%s, %s) ON CONFLICT (word) DO NOTHING", (word, translation))
         conn.commit()
         return True
-    except sqlite3.Error as e:
+    except psycopg2.Error as e:
         logger.error(f"Error adding word: {e}")
         return False
     finally:
         conn.close()
 
 def get_all_words():
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
     cursor = conn.cursor()
     cursor.execute("SELECT word, translation FROM vocabulary")
     words = cursor.fetchall()
@@ -48,9 +66,14 @@ def get_all_words():
     return words
 
 def remove_word(word):
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM vocabulary WHERE word = ?", (word,))
+    cursor.execute("DELETE FROM vocabulary WHERE word = %s", (word,))
     conn.commit()
     conn.close()
 
