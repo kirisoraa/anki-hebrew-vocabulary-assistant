@@ -115,7 +115,7 @@ def get_translation(hebrew_word):
             # If that fails, try with encoding detection
             soup = BeautifulSoup(response.content, 'html.parser', from_encoding='utf-8')
             
-        translation_div = soup.find('div', {'id': 'ctl00_ctl00_ContentPlaceHolder1_ContentMiddle_TranslationPanel1_div_right'})
+        translation_div = soup.find('span', {'id': 'ctl00_ctl00_ContentPlaceHolder1_ContentMiddle_TranslationPanel1_lblReverso'})
         if translation_div:
             # Clean up the text
             text = translation_div.get_text(strip=True)
