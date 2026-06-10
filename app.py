@@ -135,10 +135,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = """
 Available commands:
-/list - Show all saved words
-/add - Add a Hebrew word (send word directly)
-/remove - Remove a Hebrew word
-/deck - Generate and send Anki deck
+/list or /l - Show all saved words
+/add or /a - Add a Hebrew word (send word directly)
+/remove or /r - Remove a Hebrew word
+/deck or /d - Generate and send Anki deck
 /help - Show this help message
 
 To add a word, simply send the Hebrew word.
@@ -265,13 +265,18 @@ def main():
     # Create application
     application = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
     
-    # Add handlers
+    # Add handlers with shorthand commands
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("list", list_words))
     application.add_handler(CommandHandler("add", add_word_command))
     application.add_handler(CommandHandler("remove", remove_word_command))
     application.add_handler(CommandHandler("deck", generate_anki_deck))
+    # Shorthand commands
+    application.add_handler(CommandHandler("l", list_words))
+    application.add_handler(CommandHandler("a", add_word_command))
+    application.add_handler(CommandHandler("r", remove_word_command))
+    application.add_handler(CommandHandler("d", generate_anki_deck))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     
     # Run the bot
