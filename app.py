@@ -166,6 +166,11 @@ async def add_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     hebrew_word = ' '.join(context.args)
     translation = get_translation(hebrew_word)
     
+    # Check if translation is an error message
+    if translation.startswith("Error") or translation.startswith("Network error"):
+        await update.message.reply_text(f"Could not translate '{hebrew_word}'. Please check the word and try again.")
+        return
+    
     if add_word(hebrew_word, translation):
         await update.message.reply_text(f"Added: {hebrew_word} - {translation}")
     else:
@@ -237,6 +242,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     # Assume any text input is a Hebrew phrase to add
     translation = get_translation(text)
+    
+    # Check if translation is an error message
+    if translation.startswith("Error") or translation.startswith("Network error"):
+        await update.message.reply_text(f"Could not translate '{text}'. Please check the word and try again.")
+        return
     
     if add_word(text, translation):
         await update.message.reply_text(f"Added: {text} - {translation}")
