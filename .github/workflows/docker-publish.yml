@@ -3,6 +3,8 @@ name: Build and Push to GitHub Container Registry
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build-and-push:
@@ -23,10 +25,23 @@ jobs:
         username: kirisoraa
         password: ${{ secrets.GITHUB_TOKEN }}
     
+    - name: Extract version from tag
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/v* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_ENV
+        else
+          VERSION=latest
+          echo "version=$VERSION" >> $GITHUB_ENV
+        fi
+    
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
         context: .
         push: true
-        tags: ghcr.io/kirisoraa/anki-hebrew-vocabulary-assistant:latest
+        tags: |
+          ghcr.io/kirisoraa/anki-hebrew-vocabulary-assistant:${{ env.version }}
+          ghcr.io/kirisoraa/anki-hebrew-vocabulary-assistant:latest
       
