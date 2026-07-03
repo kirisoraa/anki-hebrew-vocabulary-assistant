@@ -129,6 +129,13 @@ def get_translation(hebrew_word):
         logger.error(f"Error fetching translation: {e}")
         return "Error fetching translation"
 
+
+async def cancel_translation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.pop('pending_word', None)
+    await update.message.reply_text("Cancelled. Word was not added.")
+    return
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Welcome to Hebrew Vocabulary Bot! Use /help to see available commands.")
 
@@ -169,6 +176,11 @@ async def add_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if translation is an error message
     if translation.startswith("Error") or translation.startswith("Network error"):
         await update.message.reply_text(f"Could not translate '{hebrew_word}'. Please check the word and try again.")
+        return
+    
+    if translation == "Translation not found":
+        context.user_data['pending_word'] = hebrew_word
+        await update.message.reply_text(f"Translation not found for '{hebrew_word}'. Please enter the translation:")
         return
     
     if add_word(hebrew_word, translation):
@@ -240,12 +252,29 @@ async def generate_anki_deck(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    # Assume any text input is a Hebrew phrase to add
+    
+    # Check if we're waiting for a manual translation
+    if context.user_data.get('pending_word'):
+        hebrew_word = context.user_data.pop('pending_word')
+        translation = text.strip()
+        
+        if add_word(hebrew_word, translation):
+            await update.message.reply_text(f"Added: {hebrew_word} - {translation}")
+        else:
+            await update.message.reply_text(f"Word '{hebrew_word}' already exists in the database.")
+        return
+    
+    # Normal flow: assume any text input is a Hebrew phrase to add
     translation = get_translation(text)
     
     # Check if translation is an error message
     if translation.startswith("Error") or translation.startswith("Network error"):
         await update.message.reply_text(f"Could not translate '{text}'. Please check the word and try again.")
+        return
+    
+    if translation == "Translation not found":
+        context.user_data['pending_word'] = text
+        await update.message.reply_text(f"Translation not found for '{text}'. Please enter the translation:")
         return
     
     if add_word(text, translation):
@@ -277,6 +306,10 @@ def main():
     application.add_handler(CommandHandler("a", add_word_command))
     application.add_handler(CommandHandler("r", remove_word_command))
     application.add_handler(CommandHandler("d", generate_anki_deck))
+    # Cancel command
+    application.add_handler(CommandHandler("cancel", cancel_translation))
+    application.add_handler(CommandHandler("c", cancel_translation))
+    # Text handler
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     
     # Run the bot
