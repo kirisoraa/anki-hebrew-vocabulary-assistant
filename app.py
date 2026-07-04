@@ -131,24 +131,32 @@ def get_translation(hebrew_word):
         return "Error fetching translation"
 
 
-TELEGRAM_MAX_LENGTH = 4096
+TELEGRAM_MAX_BYTES = 4096
 
 
 async def _send_long_message(update: Update, text: str):
-    """Send a message that may exceed Telegram's 4096 character limit by splitting it into chunks."""
-    if len(text) <= TELEGRAM_MAX_LENGTH:
+    """Send a message that may exceed Telegram's 4096 byte limit by splitting it into chunks.
+
+    Telegram enforces a 4096 byte limit per message (UTF-8 encoded).
+    """
+    text_bytes = text.encode("utf-8")
+    if len(text_bytes) <= TELEGRAM_MAX_BYTES:
         await update.message.reply_text(text)
         return
-    
-    # Split into chunks
-    chunks = [text[i:i + TELEGRAM_MAX_LENGTH] for i in range(0, len(text), TELEGRAM_MAX_LENGTH)]
-    
-    for i, chunk in enumerate(chunks):
-        if len(chunks) > 1 and i == 0:
-            # Add continuation hint to first chunk
-            await update.message.reply_text(f"{chunk}\n... (continuing)")
-        else:
-            await update.message.reply_text(chunk)
+
+    # Split by bytes, then decode back to strings
+    raw_chunks = []
+    start = 0
+    while start < len(text_bytes):
+        end = start + TELEGRAM_MAX_BYTES
+        # Clamp end to avoid splitting in the middle of a multi-byte character
+        while end < len(text_bytes) and (text_bytes[end] & 0xC0) == 0x80:
+            end += 1
+        raw_chunks.append(text_bytes[start:end])
+        start = end
+
+    for chunk_bytes in raw_chunks:
+        await update.message.reply_text(chunk_bytes.decode("utf-8"))
 
 
 async def cancel_translation(update: Update, context: ContextTypes.DEFAULT_TYPE):
