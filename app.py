@@ -2,6 +2,7 @@ import os
 import psycopg2
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.error import BadRequest
 import requests
 from bs4 import BeautifulSoup
 import logging
@@ -130,6 +131,26 @@ def get_translation(hebrew_word):
         return "Error fetching translation"
 
 
+TELEGRAM_MAX_LENGTH = 4096
+
+
+async def _send_long_message(update: Update, text: str):
+    """Send a message that may exceed Telegram's 4096 character limit by splitting it into chunks."""
+    if len(text) <= TELEGRAM_MAX_LENGTH:
+        await update.message.reply_text(text)
+        return
+    
+    # Split into chunks
+    chunks = [text[i:i + TELEGRAM_MAX_LENGTH] for i in range(0, len(text), TELEGRAM_MAX_LENGTH)]
+    
+    for i, chunk in enumerate(chunks):
+        if len(chunks) > 1 and i == 0:
+            # Add continuation hint to first chunk
+            await update.message.reply_text(f"{chunk}\n... (continuing)")
+        else:
+            await update.message.reply_text(chunk)
+
+
 async def cancel_translation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.pop('pending_word', None)
     await update.message.reply_text("Cancelled. Word was not added.")
@@ -162,7 +183,7 @@ async def list_words(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for word, translation in words:
         message += f"• {word} - {translation}\n"
     
-    await update.message.reply_text(message)
+    await _send_long_message(update, message)
 
 async def add_word_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:

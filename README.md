@@ -6,6 +6,7 @@ A Telegram bot that helps with Hebrew vocabulary practice by saving words and ge
 
 - Add Hebrew words with translations from doitinhebrew.com
 - Manual translation entry when automatic translation fails
+- Long messages are automatically split (e.g. `/list` with many words)
 - Store words in a PostgreSQL database
 - Generate Anki decks with reverse flashcards
 - Telegram commands: /list, /add, /remove, /deck, /help, /cancel
